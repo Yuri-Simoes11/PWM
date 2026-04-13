@@ -6,7 +6,6 @@
 // Define o valor do registrador MOD do TPM para configurar o período do PWM
 #define TPM_MODULE 1000         // Define a frequência do PWM fpwm = (TPM_CLK / (TPM_MODULE * PS))
 // Valores de duty cycle correspondentes a diferentes larguras de pulso
-// uint16_t duty_50  = TPM_MODULE/2;       // 50% de duty cycle (meio brilho)
 
 int main(void)
 {
@@ -31,16 +30,27 @@ int main(void)
     pwm_tpm_CnV(TPM2, 1, 300); // Verde
     pwm_tpm_CnV(TPM0, 1, 1000); // Azul
 
+    int pwmverm;
+    pwmverm = 0;
+    int pwmverde;
+    pwmverde = 300;
+
     // Loop infinito
     for (;;){
-      pwm_tpm_CnV(TPM2, 0, 0); // Vermelho
-      pwm_tpm_CnV(TPM2, 1, 300); // Verde
+      pwm_tpm_CnV(TPM2, 0, pwmverm); // Vermelho
+      pwm_tpm_CnV(TPM2, 1, pwmverde); // Verde
       pwm_tpm_CnV(TPM0, 1, 10000); // Azul
-      k_msleep(1000);
+      k_msleep(10);/*
       pwm_tpm_CnV(TPM2, 0, 10000); // Vermelho
       pwm_tpm_CnV(TPM2, 1, 10000); // Verde
       pwm_tpm_CnV(TPM0, 1, 10000); // Azul
-      k_msleep(1000);
+      k_msleep(1000);*/
+      pwmverm++;
+      pwmverde++;
+      if(pwmverm == 1200){
+        pwmverm = 0;
+        pwmverde = 300;
+      }
       // O programa poderia alterar o duty cycle dinamicamente aqui se desejado
     }
 
