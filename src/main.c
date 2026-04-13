@@ -36,11 +36,11 @@ int main(void)
       pwm_tpm_CnV(TPM2, 0, 10000); // Vermelho
       pwm_tpm_CnV(TPM2, 1, 300); // Verde
       pwm_tpm_CnV(TPM0, 1, 10000); // Azul
-      k_msleep(1000);
+      k_msleep(2000);
       pwm_tpm_CnV(TPM2, 0, 10000); // Vermelho
       pwm_tpm_CnV(TPM2, 1, 10000); // Verde
       pwm_tpm_CnV(TPM0, 1, 10000); // Azul
-      k_msleep(1000);
+      k_msleep(2000);
       // O programa poderia alterar o duty cycle dinamicamente aqui se desejado
     }
 
