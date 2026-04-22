@@ -1,58 +1,42 @@
-#include <zephyr/kernel.h>             // Funções básicas do Zephyr (ex: k_msleep, k_thread, etc.)
-#include <zephyr/device.h>             // API para obter e utilizar dispositivos do sistema
-#include <zephyr/drivers/gpio.h>       // API para controle de pinos de entrada/saída (GPIO)
-#include <pwm_z42.h>                // Biblioteca personalizada com funções de controle do TPM (Timer/PWM Module)
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <pwm_z42.h>
 
-// Define o valor do registrador MOD do TPM para configurar o período do PWM
-#define TPM_MODULE 1000         // Define a frequência do PWM fpwm = (TPM_CLK / (TPM_MODULE * PS))
-// Valores de duty cycle correspondentes a diferentes larguras de pulso
+#define PORTB_NODE DT_NODELABEL(gpiob)
+#define TPM_MODULE 1000
 
-int main(void)
-{
-    // Inicializa o módulo TPM2 com:
-    // - base do TPMx
-    // - fonte de clock PLL/FLL (TPM_CLK)
-    // - valor do registrador MOD
-    // - tipo de clock (TPM_CLK)
-    // - prescaler de 1 a 128 (PS)
-    // - modo de operação EDGE_PWM
-    pwm_tpm_Init(TPM0, TPM_PLLFLL, TPM_MODULE, TPM_CLK, PS_128, EDGE_PWM);
-    pwm_tpm_Init(TPM2, TPM_PLLFLL, TPM_MODULE, TPM_CLK, PS_128, EDGE_PWM);
-
-    // Inicializa o canal 0 do TPM2 para gerar sinal PWM na porta GPIOB_18
-    // - modo TPM_PWM_H (nível alto durante o pulso)
-    pwm_tpm_Ch_Init(TPM2, 0, TPM_PWM_H, GPIOB, 18);
-    pwm_tpm_Ch_Init(TPM2, 1, TPM_PWM_H, GPIOB, 19);
-    pwm_tpm_Ch_Init(TPM0, 1, TPM_PWM_H, GPIOD, 1);
-
-    // Define o valor do duty cycle: nesse caso, duty_100 (LED quase desligado)
-    pwm_tpm_CnV(TPM2, 0, 0); // Vermelho
-    pwm_tpm_CnV(TPM2, 1, 300); // Verde
-    pwm_tpm_CnV(TPM0, 1, 1000); // Azul
-
-    int pwmverm;
-    pwmverm = 0;
-    int pwmverde;
-    pwmverde = 300;
-
-    // Loop infinito
-    for (;;){
-      pwm_tpm_CnV(TPM2, 0, pwmverm); // Vermelho
-      pwm_tpm_CnV(TPM2, 1, pwmverde); // Verde
-      pwm_tpm_CnV(TPM0, 1, 10000); // Azul
-      k_msleep(10);/*
-      pwm_tpm_CnV(TPM2, 0, 10000); // Vermelho
-      pwm_tpm_CnV(TPM2, 1, 10000); // Verde
-      pwm_tpm_CnV(TPM0, 1, 10000); // Azul
-      k_msleep(1000);*/
-      pwmverm++;
-      pwmverde++;
-      if(pwmverm == 1200){
-        pwmverm = 0;
-        pwmverde = 300;
-      }
-      // O programa poderia alterar o duty cycle dinamicamente aqui se desejado
+int main(void){
+    const struct device *portb = DEVICE_DT_GET(PORTB_NODE);
+    const struct device *porta = DEVICE_DT_GET(DT_NODELABEL(gpioa));
+    const struct device *portd = DEVICE_DT_GET(DT_NODELABEL(gpiod));
+    if (!device_is_ready(portb)) {
+        return 0;
     }
 
+
+    pwm_tpm_Init(TPM1, TPM_PLLFLL, TPM_MODULE, TPM_CLK, PS_128, EDGE_PWM);
+    pwm_tpm_Ch_Init(TPM1, 1, TPM_PWM_H, GPIOB, 1);  // ENB (PTB1)
+    pwm_tpm_Ch_Init(TPM1, 0, TPM_PWM_H, GPIOE, 20); //ENA (PTE20)
+
+    gpio_pin_configure(portb, 2, GPIO_OUTPUT); // IN1 (PTB2)
+    gpio_pin_configure(portb, 3, GPIO_OUTPUT); // IN2 (PTB3)
+    gpio_pin_configure(porta, 12, GPIO_OUTPUT);// IN3 (PTA12)
+    gpio_pin_configure(portd, 4, GPIO_OUTPUT); // IN4 (PTD4)
+
+    int vel1=300;
+    int vel2=800;
+
+    while (1){        
+        gpio_pin_set(porta, 12, 0);
+        gpio_pin_set(portd, 4, 1); 
+        pwm_tpm_CnV(TPM1, 0, vel1);
+
+        gpio_pin_set(portb, 2, 0);
+        gpio_pin_set(portb, 3, 1); 
+        pwm_tpm_CnV(TPM1, 1, vel2);
+        k_msleep(10);
+     
+    }
     return 0;
 }
